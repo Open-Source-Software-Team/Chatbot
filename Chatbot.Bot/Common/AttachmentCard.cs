@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AdaptiveCards;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using RestSharp.Serialization.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
@@ -68,12 +71,56 @@ namespace Chatbot.Bot.Common
             return reply as Activity;
         }
 
-        public static string GetText()
+        public static Activity GetAccount()
         {
-            ApiConsumption xx = new ApiConsumption();
-            var response = xx.ApiFactory("", "");
+            ApiConsumption vObjApi = new ApiConsumption();
+            var response = vObjApi.ApiFactory("", "");
+            AdaptiveCardParseResult parseJson = AdaptiveCard.FromJson(response);
+            AdaptiveCard card = parseJson.Card;
+            Attachment attach = new Attachment()
+            {
+                ContentType = AdaptiveCard.ContentType,
+                Content = card
+            };
+            var reply = MessageFactory.Attachment(attach);
+            return reply as Activity;
+        }
 
-            return response;
+        public static Activity GetCertificate1()
+        {
+            try
+            {
+                ApiConsumption vObjApi = new ApiConsumption();
+                var bytes = vObjApi.ApiWorkCertificateByte("", "");
+                var base64String = bytes;
+                var image64 = "data:application/pdf;base64," + base64String;
+                var Attachments = new List<Attachment>
+                {
+                    new Attachment(contentType: "application/pdf", contentUrl: image64, name: "CertificadoLaboral.pdf")
+                };
+                var reply = MessageFactory.Attachment(Attachments, "CertificadoLaboral");
+                return reply as Activity;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public static string GetCertificate()
+        {
+            try
+            {
+                ApiConsumption vObjApi = new ApiConsumption();
+                var bytes = vObjApi.ApiWorkCertificate("", "");
+                byte[] actualBytes = Convert.FromBase64String(bytes);
+
+                return bytes;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }
